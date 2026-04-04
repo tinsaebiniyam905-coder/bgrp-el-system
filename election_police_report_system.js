@@ -1,118 +1,38 @@
-// ================= BACKEND (Node.js + Express + SQLite) =================
+// ================= FULL SYSTEM (Firebase Based - No Backend Needed) =================
 
-import express from "express";
-import cors from "cors";
-import Database from "better-sqlite3";
+// ================= firebase.js =================
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "firebase/firestore";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const firebaseConfig = {
+  apiKey: "AIzaSyD2lXdRT34nG2_mmLhgn1Wt7hOT6IF6z7E",
+  authDomain: "election-police-report-sys.firebaseapp.com",
+  projectId: "election-police-report-sys",
+  storageBucket: "election-police-report-sys.firebasestorage.app",
+  messagingSenderId: "832289330129",
+  appId: "1:832289330129:web:7944e2b6e4aa0c82ca86f0"
+};
 
-const db = new Database("reports.db");
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-// Create table
-db.prepare(`
-CREATE TABLE IF NOT EXISTS reports (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  region TEXT,
-  zone TEXT,
-  wereda TEXT,
-  station TEXT,
-  crime_type TEXT,
-  weapon_type TEXT,
-  injured_light INTEGER,
-  injured_serious INTEGER,
-  deaths INTEGER,
-  male INTEGER,
-  female INTEGER,
-  suspects_caught TEXT,
-  suspects_count INTEGER,
-  description TEXT,
-  date TEXT,
-  officer_name TEXT,
-  seen INTEGER DEFAULT 0
-)
-`).run();
-
-// Login (simple)
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-
-  if (username === "wereda" && password === "1234") {
-    return res.json({ role: "wereda" });
-  }
-
-  if (username === "police" && password === "1234") {
-    return res.json({ role: "police" });
-  }
-
-  res.status(401).json({ message: "Invalid" });
-});
-
-// Submit report
-app.post("/reports", (req, res) => {
-  const data = req.body;
-
-  const stmt = db.prepare(`
-    INSERT INTO reports (
-      region, zone, wereda, station, crime_type, weapon_type,
-      injured_light, injured_serious, deaths, male, female,
-      suspects_caught, suspects_count, description, date, officer_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  stmt.run(
-    data.region, data.zone, data.wereda, data.station,
-    data.crime_type, data.weapon_type,
-    data.injured_light, data.injured_serious, data.deaths,
-    data.male, data.female,
-    data.suspects_caught, data.suspects_count,
-    data.description, data.date, data.officer_name
-  );
-
-  res.json({ message: "Report saved" });
-});
-
-// Get all reports
-app.get("/reports", (req, res) => {
-  const reports = db.prepare("SELECT * FROM reports").all();
-  res.json(reports);
-});
-
-// Mark as seen
-app.put("/reports/:id/seen", (req, res) => {
-  db.prepare("UPDATE reports SET seen=1 WHERE id=?").run(req.params.id);
-  res.json({ message: "Updated" });
-});
-
-// Simple AI summary (basic)
-app.get("/analytics", (req, res) => {
-  const total = db.prepare("SELECT COUNT(*) as count FROM reports").get();
-  const deaths = db.prepare("SELECT SUM(deaths) as total FROM reports").get();
-
-  res.json({
-    total_reports: total.count,
-    total_deaths: deaths.total || 0
-  });
-});
-
-app.listen(3000, () => console.log("Server running on port 3000"));
+export { db, auth, collection, addDoc, getDocs, updateDoc, doc, signInWithEmailAndPassword };
 
 
-// ================= FRONTEND (Simple HTML) =================
-
-/* Save this as index.html */
+// ================= index.html =================
 
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Police Report System</title>
+  <title>Election Police Report System</title>
 </head>
 <body>
 
 <h2>Login</h2>
-<input id="username" placeholder="username" />
-<input id="password" placeholder="password" type="password" />
+<input id="email" placeholder="email" />
+<input id="password" type="password" placeholder="password" />
 <button onclick="login()">Login</button>
 
 <div id="wereda" style="display:none">
@@ -128,7 +48,7 @@ app.listen(3000, () => console.log("Server running on port 3000"));
   <input id="deaths" placeholder="Deaths"><br>
   <input id="male" placeholder="Male"><br>
   <input id="female" placeholder="Female"><br>
-  <input id="caught" placeholder="Caught? yes/no"><br>
+  <input id="caught" placeholder="Caught yes/no"><br>
   <input id="count" placeholder="Suspects Count"><br>
   <input id="desc" placeholder="Description"><br>
   <input id="date" placeholder="Date"><br>
@@ -142,68 +62,94 @@ app.listen(3000, () => console.log("Server running on port 3000"));
   <ul id="list"></ul>
 </div>
 
-<script>
+<script type="module">
+import { db, auth, collection, addDoc, getDocs, updateDoc, doc, signInWithEmailAndPassword } from "./firebase.js";
+
 let role = "";
 
-function login() {
-  fetch("http://localhost:3000/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    role = data.role;
-    if (role === "wereda") {
-      document.getElementById("wereda").style.display = "block";
-    } else {
-      document.getElementById("police").style.display = "block";
-    }
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const user = await signInWithEmailAndPassword(auth, email, password);
+
+  // Simple role detection
+  if (email.includes("wereda")) {
+    role = "wereda";
+    document.getElementById("wereda").style.display = "block";
+  } else {
+    role = "police";
+    document.getElementById("police").style.display = "block";
+  }
+}
+
+async function submitReport() {
+  await addDoc(collection(db, "reports"), {
+    region: region.value,
+    zone: zone.value,
+    wereda: weredaInput.value,
+    station: station.value,
+    crime_type: crime.value,
+    weapon_type: weapon.value,
+    injured_light: Number(light.value),
+    injured_serious: Number(serious.value),
+    deaths: Number(deaths.value),
+    male: Number(male.value),
+    female: Number(female.value),
+    suspects_caught: caught.value,
+    suspects_count: Number(count.value),
+    description: desc.value,
+    date: date.value,
+    officer_name: officer.value,
+    seen: false
+  });
+
+  alert("Report Sent");
+}
+
+async function loadReports() {
+  const querySnapshot = await getDocs(collection(db, "reports"));
+
+  list.innerHTML = "";
+
+  querySnapshot.forEach((docItem) => {
+    const data = docItem.data();
+
+    const li = document.createElement("li");
+    li.innerText = data.region + " - " + data.crime_type + " (" + (data.seen ? "Seen" : "New") + ")";
+
+    li.onclick = async () => {
+      await updateDoc(doc(db, "reports", docItem.id), {
+        seen: true
+      });
+      alert("Marked as seen");
+    };
+
+    list.appendChild(li);
   });
 }
 
-function submitReport() {
-  fetch("http://localhost:3000/reports", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      region: region.value,
-      zone: zone.value,
-      wereda: weredaInput.value,
-      station: station.value,
-      crime_type: crime.value,
-      weapon_type: weapon.value,
-      injured_light: light.value,
-      injured_serious: serious.value,
-      deaths: deaths.value,
-      male: male.value,
-      female: female.value,
-      suspects_caught: caught.value,
-      suspects_count: count.value,
-      description: desc.value,
-      date: date.value,
-      officer_name: officer.value
-    })
-  })
-  .then(() => alert("Sent"));
-}
+window.login = login;
+window.submitReport = submitReport;
+window.loadReports = loadReports;
 
-function loadReports() {
-  fetch("http://localhost:3000/reports")
-  .then(res => res.json())
-  .then(data => {
-    list.innerHTML = "";
-    data.forEach(r => {
-      const li = document.createElement("li");
-      li.innerText = r.region + " - " + r.crime_type + " (" + (r.seen ? "Seen" : "New") + ")";
-      list.appendChild(li);
-    });
-  });
-}
 </script>
 
 </body>
 </html>
+
+
+// ================= FIRESTORE RULES =================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+  }
+}
