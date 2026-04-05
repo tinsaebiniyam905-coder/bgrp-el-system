@@ -1,112 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="am">
 <head>
-  <title>Election Police Report System</title>
+  <meta charset="UTF-8" />
+  <title>የፖሊስ ሪፖርት ሲስተም</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: white;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      color: black;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .hidden { display: none; }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .report-item {
+      background: #f1f1f1;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Login</h2>
-<input id="email" placeholder="email" />
-<input id="password" type="password" placeholder="password" />
-<button onclick="login()">Login</button>
+<div class="container">
 
-<div id="wereda" style="display:none">
-  <h3>Submit Report</h3>
-  <input id="region" placeholder="Region"><br>
-  <input id="zone" placeholder="Zone"><br>
-  <input id="weredaInput" placeholder="Wereda"><br>
-  <input id="station" placeholder="Station"><br>
-  <input id="crime" placeholder="Crime Type"><br>
-  <input id="weapon" placeholder="Weapon"><br>
-  <input id="light" placeholder="Light Injured"><br>
-  <input id="serious" placeholder="Serious Injured"><br>
-  <input id="deaths" placeholder="Deaths"><br>
-  <input id="male" placeholder="Male"><br>
-  <input id="female" placeholder="Female"><br>
-  <input id="caught" placeholder="Caught yes/no"><br>
-  <input id="count" placeholder="Suspects Count"><br>
-  <input id="desc" placeholder="Description"><br>
-  <input id="date" placeholder="Date"><br>
-  <input id="officer" placeholder="Officer Name"><br>
-  <button onclick="submitReport()">Send</button>
-</div>
+  <h2>🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
 
-<div id="police" style="display:none">
-  <h3>Reports</h3>
-  <button onclick="loadReports()">Load</button>
-  <ul id="list"></ul>
+  <!-- LOGIN -->
+  <div class="card" id="loginBox">
+    <h3>መግቢያ</h3>
+    <input id="email" placeholder="ኢሜይል" />
+    <input id="password" type="password" placeholder="ፓስዎርድ" />
+    <button onclick="login()">ግባ</button>
+  </div>
+
+  <!-- WEREDA DASHBOARD -->
+  <div id="weredaDash" class="hidden">
+    <div class="card">
+      <h3>📋 ሪፖርት መሙያ</h3>
+
+      <input id="region" placeholder="ክልል" />
+      <input id="zone" placeholder="ዞን" />
+      <input id="wereda" placeholder="ወረዳ" />
+      <input id="station" placeholder="ምርጫ ጣቢያ" />
+
+      <input id="crime" placeholder="የወንጀል አይነት" />
+      <input id="weapon" placeholder="መሳሪያ" />
+
+      <input id="light" placeholder="ቀላል ጉዳት" />
+      <input id="serious" placeholder="ከባድ ጉዳት" />
+      <input id="deaths" placeholder="ሞት" />
+
+      <input id="male" placeholder="ወንድ" />
+      <input id="female" placeholder="ሴት" />
+
+      <input id="caught" placeholder="ተይዘዋል?" />
+      <input id="count" placeholder="ብዛት" />
+
+      <textarea id="desc" placeholder="አጭር መግለጫ"></textarea>
+      <input id="date" type="datetime-local" />
+      <input id="officer" placeholder="ፖሊስ ስም" />
+
+      <button onclick="submitReport()">ላክ</button>
+
+      <div id="successMsg" class="success hidden">✅ ሪፖርት ተልኳል</div>
+    </div>
+
+    <div class="card">
+      <h3>📁 የላኩት ሪፖርቶች</h3>
+      <div id="myReports"></div>
+    </div>
+  </div>
+
+  <!-- POLICE DASHBOARD -->
+  <div id="policeDash" class="hidden">
+    <div class="card">
+      <h3>📊 የተላኩ ሪፖርቶች</h3>
+      <button onclick="loadReports()">አድስ ጫን</button>
+      <div id="reports"></div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
-import { db, auth, collection, addDoc, getDocs, updateDoc, doc, signInWithEmailAndPassword } from "./firebase.js";
+import { db, auth, collection, addDoc, getDocs } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let role = "";
 
-window.login = async function () {
+window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
+  await signInWithEmailAndPassword(auth, email, password);
 
-    if (email.includes("wereda")) {
-      role = "wereda";
-      document.getElementById("wereda").style.display = "block";
-    } else {
-      role = "police";
-      document.getElementById("police").style.display = "block";
-    }
-  } catch (e) {
-    alert("Login failed");
+  if (email.includes("wereda")) {
+    role = "wereda";
+    loginBox.style.display = "none";
+    weredaDash.classList.remove("hidden");
+  } else {
+    role = "police";
+    loginBox.style.display = "none";
+    policeDash.classList.remove("hidden");
+    loadReports();
   }
 };
 
-window.submitReport = async function () {
+window.submitReport = async function() {
   await addDoc(collection(db, "reports"), {
     region: region.value,
     zone: zone.value,
-    wereda: weredaInput.value,
+    wereda: wereda.value,
     station: station.value,
-    crime_type: crime.value,
-    weapon_type: weapon.value,
-    injured_light: Number(light.value),
-    injured_serious: Number(serious.value),
-    deaths: Number(deaths.value),
-    male: Number(male.value),
-    female: Number(female.value),
-    suspects_caught: caught.value,
-    suspects_count: Number(count.value),
-    description: desc.value,
-    date: date.value,
-    officer_name: officer.value,
-    seen: false
+    crime: crime.value,
+    weapon: weapon.value,
+    date: date.value
   });
 
-  alert("Report Sent");
+  successMsg.classList.remove("hidden");
+  loadMyReports();
 };
 
-window.loadReports = async function () {
-  const querySnapshot = await getDocs(collection(db, "reports"));
-  list.innerHTML = "";
+async function loadMyReports() {
+  const snapshot = await getDocs(collection(db, "reports"));
+  myReports.innerHTML = "";
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    myReports.innerHTML += `<div class='report-item'>${d.region} - ${d.crime}</div>`;
+  });
+}
 
-  querySnapshot.forEach((docItem) => {
-    const data = docItem.data();
-
-    const li = document.createElement("li");
-    li.innerText = data.region + " - " + data.crime_type + " (" + (data.seen ? "Seen" : "New") + ")";
-
-    li.onclick = async () => {
-      await updateDoc(doc(db, "reports", docItem.id), {
-        seen: true
-      });
-      alert("Marked as seen");
-    };
-
-    list.appendChild(li);
+window.loadReports = async function() {
+  const snapshot = await getDocs(collection(db, "reports"));
+  reports.innerHTML = "";
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    reports.innerHTML += `<div class='report-item'>${d.region} | ${d.zone} | ${d.crime}</div>`;
   });
 };
 </script>
 
 </body>
 </html>
-
