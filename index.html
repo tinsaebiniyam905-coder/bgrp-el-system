@@ -85,16 +85,15 @@ const sendBtn=document.getElementById("sendBtn");
 let allReports=[];
 let map,chart;
 
-// 🔐 LOGIN ROLE BASED
-loginBtn.onclick=async()=>{
- try{
-  const email=document.getElementById("email").value;
-  const password=document.getElementById("password").value;
-  await signInWithEmailAndPassword(auth,email,password);
+// 🔐 AUTO LOGIN (NO REFRESH LOGIN)
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+onAuthStateChanged(auth,(user)=>{
+ if(user){
   loginBox.style.display="none";
 
-  // ✅ ROLE SWITCH
+  const email=user.email;
+
   if(email.includes("wereda")){
     weredaDash.classList.remove("hidden");
     loadMyReports();
@@ -103,9 +102,10 @@ loginBtn.onclick=async()=>{
     initMap();
     realtime();
   }
-
- }catch(e){alert(e.message)}
-};
+ }else{
+  loginBox.style.display="block";
+ }
+});
 
 // 📤 SEND REPORT
 sendBtn.onclick=async()=>{
