@@ -2,7 +2,7 @@
 <html lang="am">
 <head>
 <meta charset="UTF-8" />
-<title>የፖሊስ ሪፖርት ሲስተም</title>
+<title>የምርጫ የፖሊስ ሪፖርት ሲስተም</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -26,7 +26,7 @@ button:hover{background:#0056b3;}
 
 <body>
 <div class="container">
-<h2>🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
+<h2>🇪🇹 የምርጫ የፖሊስ ሪፖርት ሲስተም</h2>
 
 <div class="card" id="loginBox">
 <input id="email" placeholder="ኢሜይል" />
@@ -40,7 +40,13 @@ button:hover{background:#0056b3;}
 <input id="region" placeholder="ክልል" />
 <input id="zone" placeholder="ዞን" />
 <input id="wereda" placeholder="ወረዳ" />
+<input id="Election station" placeholder="ምርጫ ጣቢያ" />
 <input id="crime" placeholder="ወንጀል" />
+<input id="weapon" placeholder="የተፈፀመበት መሳሪያ" />
+<input id="suspects count" placeholder="ተጠርጣሪ ብዛት" />
+<input id="suspects catch or not" placeholder="ተጠርጣሪዎች ተይዘዋል/አልተያዙም" />
+<input id="General short description" placeholder="አጠቀላይ አጭር መግልጫ" />
+<input id="Name of the police officer who filed the report" placeholder="ሪፖርቱን የሰራ ፖሊስ ስም" />  
 <input id="lat" placeholder="Latitude" />
 <input id="lng" placeholder="Longitude" />
 <input id="date" type="datetime-local" />
@@ -51,7 +57,7 @@ button:hover{background:#0056b3;}
 <div id="policeDash" class="hidden">
 <div class="card">
 <h3>🔔 Real-time Notification: <span id="notify">0</span></h3>
-<input id="filterZone" placeholder="Filter በዞን" />
+<input id="filterZone" placeholder="Filter በዞን ስም ወይም ወረዳ" />
 <input id="filterDate" type="date" />
 <button onclick="renderReports()">Filter</button>
 <button onclick="exportExcel()">📥 Excel Export</button>
