@@ -1,198 +1,165 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-  <meta charset="UTF-8" />
-  <title>የፖሊስ ሪፖርት ሲስተም</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<title>የፖሊስ ሪፖርት ሲስተም</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: white;
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .card {
-      background: white;
-      color: black;
-      border-radius: 15px;
-      padding: 20px;
-      margin-top: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    button:hover { background: #0056b3; }
-    .hidden { display: none; }
-
-    .success {
-      background: #d4edda;
-      color: #155724;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
-
-    .report-item {
-      background: #f1f1f1;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 10px;
-    }
-  </style>
+<style>
+body{margin:0;font-family:'Segoe UI';background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:white;}
+.container{max-width:1100px;margin:auto;padding:20px;}
+.card{background:white;color:black;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 10px 25px rgba(0,0,0,0.3);} 
+input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;}
+button{background:#007bff;color:white;padding:10px;border:none;border-radius:8px;cursor:pointer;margin-top:5px;}
+button:hover{background:#0056b3;}
+.hidden{display:none;}
+.report-item{background:#f1f1f1;margin:10px 0;padding:10px;border-radius:10px;}
+#map{height:300px;margin-top:10px;border-radius:10px;}
+</style>
 </head>
 
 <body>
-
 <div class="container">
+<h2>🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
 
-  <h2>🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
+<div class="card" id="loginBox">
+<input id="email" placeholder="ኢሜይል" />
+<input id="password" type="password" placeholder="ፓስዎርድ" />
+<button id="loginBtn">ግባ</button>
+</div>
 
-  <!-- LOGIN -->
-  <div class="card" id="loginBox">
-    <h3>መግቢያ</h3>
-    <input id="email" placeholder="ኢሜይል" />
-    <input id="password" type="password" placeholder="ፓስዎርድ" />
-    <button id="loginBtn">ግባ</button>
-  </div>
+<!-- WEREDA -->
+<div id="weredaDash" class="hidden">
+<div class="card">
+<h3>📋 ሪፖርት</h3>
+<input id="region" placeholder="ክልል" />
+<input id="zone" placeholder="ዞን" />
+<input id="wereda" placeholder="ወረዳ" />
+<input id="crime" placeholder="ወንጀል" />
+<input id="lat" placeholder="Latitude" />
+<input id="lng" placeholder="Longitude" />
+<input id="date" type="datetime-local" />
+<button id="submitBtn">ላክ</button>
+</div>
+</div>
 
-  <!-- WEREDA -->
-  <div id="weredaDash" class="hidden">
-    <div class="card">
-      <h3>📋 ሪፖርት መሙያ</h3>
+<!-- POLICE -->
+<div id="policeDash" class="hidden">
+<div class="card">
+<h3>🔔 Real-time Notification: <span id="notify">0</span></h3>
 
-      <input id="region" placeholder="ክልል" />
-      <input id="zone" placeholder="ዞን" />
-      <input id="wereda" placeholder="ወረዳ" />
-      <input id="station" placeholder="ምርጫ ጣቢያ" />
+<input id="filterZone" placeholder="Filter በዞን" />
+<input id="filterDate" type="date" />
+<button onclick="renderReports()">Filter</button>
+<button onclick="exportExcel()">📥 Excel Export</button>
 
-      <input id="crime" placeholder="የወንጀል አይነት" />
-      <input id="weapon" placeholder="መሳሪያ" />
+<div id="reports"></div>
 
-      <textarea id="desc" placeholder="መግለጫ"></textarea>
-      <input id="date" type="datetime-local" />
-      <input id="officer" placeholder="ፖሊስ ስም" />
+<h3>📊 Chart</h3>
+<canvas id="chart"></canvas>
 
-      <button id="submitBtn">ላክ</button>
-      <div id="successMsg" class="success hidden">✅ ሪፖርት ተልኳል</div>
-    </div>
+<h3>📍 Map (Hotspot)</h3>
+<div id="map"></div>
 
-    <div class="card">
-      <h3>📁 የላኩት ሪፖርቶች</h3>
-      <div id="myReports"></div>
-    </div>
-  </div>
-
-  <!-- POLICE -->
-  <div id="policeDash" class="hidden">
-    <div class="card">
-      <h3>📊 ሪፖርቶች</h3>
-      <button id="refreshBtn">አድስ</button>
-      <div id="reports"></div>
-    </div>
-  </div>
+<h3>🧠 AI Summary</h3>
+<div id="ai"></div>
+</div>
+</div>
 
 </div>
 
 <script type="module">
-import { db, auth, collection, addDoc, getDocs } from "./firebase.js";
+import { db, auth, collection, addDoc, onSnapshot } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const loginBtn = document.getElementById("loginBtn");
-const submitBtn = document.getElementById("submitBtn");
-const refreshBtn = document.getElementById("refreshBtn");
+let allReports = [];
+let map = L.map('map').setView([9.03,38.74],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let markers=[];
 
-const loginBox = document.getElementById("loginBox");
-const weredaDash = document.getElementById("weredaDash");
-const policeDash = document.getElementById("policeDash");
+loginBtn.onclick=async()=>{
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
+await signInWithEmailAndPassword(auth,email,password);
+loginBox.style.display="none";
 
-const successMsg = document.getElementById("successMsg");
-const myReports = document.getElementById("myReports");
-const reports = document.getElementById("reports");
+if(email.includes("wereda")){
+weredaDash.classList.remove("hidden");
+}else{
+policeDash.classList.remove("hidden");
+startRealtime();
+}
+};
 
-loginBtn.addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-
-    loginBox.style.display = "none";
-
-    if (email.includes("wereda")) {
-      weredaDash.classList.remove("hidden");
-      loadMyReports();
-    } else {
-      policeDash.classList.remove("hidden");
-      loadReports();
-    }
-  } catch (e) {
-    alert("❌ ሎጊን አልተሳካም");
-  }
+submitBtn.onclick=async()=>{
+await addDoc(collection(db,"reports"),{
+region:region.value,
+zone:zone.value,
+crime:crime.value,
+date:date.value,
+lat:parseFloat(lat.value),
+lng:parseFloat(lng.value)
 });
+alert("ተልኳል");
+};
 
-submitBtn.addEventListener("click", async () => {
-  await addDoc(collection(db, "reports"), {
-    region: region.value,
-    zone: zone.value,
-    wereda: wereda.value,
-    station: station.value,
-    crime: crime.value,
-    weapon: weapon.value,
-    description: desc.value,
-    date: date.value,
-    officer: officer.value
-  });
-
-  successMsg.classList.remove("hidden");
-  loadMyReports();
+function startRealtime(){
+onSnapshot(collection(db,"reports"),(snapshot)=>{
+allReports=[];
+snapshot.forEach(doc=>allReports.push(doc.data()));
+notify.innerText = snapshot.size;
+renderReports();
 });
-
-refreshBtn.addEventListener("click", loadReports);
-
-async function loadMyReports() {
-  const snapshot = await getDocs(collection(db, "reports"));
-  myReports.innerHTML = "";
-
-  snapshot.forEach(doc => {
-    const d = doc.data();
-    myReports.innerHTML += `<div class='report-item'>${d.region} - ${d.crime}</div>`;
-  });
 }
 
-async function loadReports() {
-  const snapshot = await getDocs(collection(db, "reports"));
-  reports.innerHTML = "";
+window.renderReports=function(){
+reports.innerHTML="";
+markers.forEach(m=>map.removeLayer(m));
+markers=[];
 
-  snapshot.forEach(doc => {
-    const d = doc.data();
-    reports.innerHTML += `<div class='report-item'>${d.region} | ${d.zone} | ${d.crime}</div>`;
-  });
+let zones={};
+let crimes={};
+
+allReports.forEach(data=>{
+if(filterZone.value && data.zone!==filterZone.value) return;
+if(filterDate.value && !data.date?.includes(filterDate.value)) return;
+
+reports.innerHTML+=`<div class='report-item'>${data.region}-${data.zone}-${data.crime}</div>`;
+
+if(data.lat && data.lng){
+let m=L.marker([data.lat,data.lng]).addTo(map);
+m.bindPopup(data.crime);
+markers.push(m);
 }
+
+zones[data.zone]=(zones[data.zone]||0)+1;
+crimes[data.crime]=(crimes[data.crime]||0)+1;
+});
+
+new Chart(document.getElementById("chart"),{
+type:'bar',
+data:{labels:Object.keys(zones),datasets:[{label:'Reports',data:Object.values(zones)}]}
+});
+
+let topZone=null,max=0;
+for(const z in zones){if(zones[z]>max){max=zones[z];topZone=z;}}
+
+ai.innerHTML=`🔥 Hotspot: ${topZone||"-"}`;
+};
+
+window.exportExcel=function(){
+const ws = XLSX.utils.json_to_sheet(allReports);
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Reports");
+XLSX.writeFile(wb, "reports.xlsx");
+}
+
 </script>
-
 </body>
 </html>
