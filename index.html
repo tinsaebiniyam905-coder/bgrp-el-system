@@ -130,8 +130,29 @@ sendBtn.onclick=async()=>{
 function loadMyReports(){
  onSnapshot(collection(db,"reports"),(snap)=>{
   let list=[];
+  allReports=[];
+
   snap.forEach(doc=>{
     const d={id:doc.id,...doc.data()};
+
+    // STRICT SECURITY: only own reports
+    if(d.reporterEmail===currentUser.email){
+      list.push(d);
+      allReports.push(d); // only own data accessible
+    }
+  });
+
+  list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  myReports.innerHTML="";
+  list.forEach(r=>{
+    myReports.innerHTML+=`<div class='report-item' onclick='viewReport("${r.id}")'>
+      📄 ${r.crime}<br>
+      🕒 ${new Date(r.createdAt).toLocaleString()}
+    </div>`;
+  });
+ });
+};
     if(d.reporterEmail===currentUser.email){
       list.push(d);
     }
@@ -194,21 +215,47 @@ function render(){
 
 // VIEW → MARK AS READ
 window.viewReport=function(id){
- const r=allReports.find(x=>x.id===id);
+ let r = allReports.find(x=>x.id===id);
+
+ // ከwereda side ከሆነ በmyReports ውስጥ ፈልግ
+ if(!r){
+   const items = document.querySelectorAll('#myReports .report-item');
+ }
+
+ // fallback (important fix)
+ if(!r){
+   alert("❌ ሪፖርት አልተገኘም (undefined fix)");
+   return;
+ }
+
+ // mark as read
  readIds.add(id);
  localStorage.setItem("readIds",JSON.stringify([...readIds]));
 
- const w=window.open();
+ const w = window.open();
  w.document.write(`
- <h2>📄 ሪፖርት</h2>
- <p>${r.region}</p>
- <p>${r.zone}</p>
- <p>${r.wereda}</p>
- <p>${r.station}</p>
- <p>${r.crime}</p>
- <p>${r.desc}</p>
- <p>🕒 ${new Date(r.createdAt).toLocaleString()}</p>
- <button onclick="window.print()">Print</button>
+ <html>
+ <head>
+ <title>Report</title>
+ <style>
+ body{font-family:Arial;padding:20px;}
+ h2{color:#2c3e50;}
+ p{margin:5px 0;font-size:16px;}
+ </style>
+ </head>
+ <body>
+ <h2>📄 የፖሊስ ሪፖርት</h2>
+ <p><b>ክልል:</b> ${r.region || ''}</p>
+ <p><b>ዞን:</b> ${r.zone || ''}</p>
+ <p><b>ወረዳ:</b> ${r.wereda || ''}</p>
+ <p><b>ጣቢያ:</b> ${r.station || ''}</p>
+ <p><b>ወንጀል:</b> ${r.crime || ''}</p>
+ <p><b>መግለጫ:</b> ${r.desc || ''}</p>
+ <p><b>ቀን:</b> ${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</p>
+ <br>
+ <button onclick="window.print()">🖨 Print</button>
+ </body>
+ </html>
  `);
 };
 
