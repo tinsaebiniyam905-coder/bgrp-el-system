@@ -163,22 +163,6 @@ function loadMyReports(){
   });
  });
 };
-    if(d.reporterEmail===currentUser.email){
-      list.push(d);
-    }
-  });
-
-  list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-
-  myReports.innerHTML="";
-  list.forEach(r=>{
-    myReports.innerHTML+=`<div class='report-item' onclick='viewReport("${r.id}")'>
-      ${r.crime}<br>🕒 ${new Date(r.createdAt).toLocaleString()}
-    </div>`;
-  });
- });
-}
-
 // POLICE REALTIME (all reports)
 function realtime(){
  onSnapshot(collection(db,"reports"),(snap)=>{
