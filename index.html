@@ -1,112 +1,110 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-<meta charset="UTF-8" />
-<title>የፖሊስ ሪፖርት ሲስተም</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Police Dashboard</title>
 
 <style>
-body{margin:0;font-family:'Segoe UI';background:linear-gradient(135deg,#1f4037,#99f2c8);} 
-.container{max-width:1100px;margin:auto;padding:20px;} 
-.card{background:white;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 10px 25px rgba(0,0,0,0.2);} 
-input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;} 
-button{background:#28a745;color:white;padding:10px;border:none;border-radius:8px;cursor:pointer;} 
-.hidden{display:none;} 
-.report-item{background:#f1f1f1;margin:10px 0;padding:10px;border-radius:10px;cursor:pointer;} 
+body{margin:0;font-family:'Segoe UI',sans-serif;background:#f4f6f9}
+.header{background:linear-gradient(90deg,#0f2027,#203a43,#2c5364);color:white;padding:20px;text-align:center}
+.header h1{margin:0;font-size:26px}
+.header p{color:gold;font-weight:bold}
+.container{display:flex}
+.sidebar{width:220px;background:#1e2a38;color:white;height:100vh;padding:20px}
+.sidebar button{width:100%;padding:10px;margin:10px 0;border:none;background:#34495e;color:white;cursor:pointer;border-radius:5px}
+.sidebar button:hover{background:#16a085}
+.main{flex:1;padding:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.card{background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.report-item{background:white;padding:15px;margin:10px 0;border-radius:8px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.report-item:hover{background:#ecf0f1}
+.new{color:red;font-weight:bold}
+.logout{background:red !important}
 </style>
 </head>
 
 <body>
+
+<div class="header">
+  <h1>🇪🇹 የፖሊስ ሪፖርት ስርዓት</h1>
+  <p>ቤንሻንጉል ጉምዝ ክልል ፖሊስ ኮሚሽን እና ሰላም ግንባታና ፀጥታ ቢሮ</p>
+</div>
+
 <div class="container">
 
-<h2 style="text-align:center;">🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
-
-<div class="card" id="loginBox">
-<input id="email" placeholder="email" />
-<input id="password" type="password" placeholder="password" />
-<button id="loginBtn">Login</button>
+<div class="sidebar">
+  <h3>📋 Menu</h3>
+  <button onclick="showSection('dashboard')">📊 Dashboard</button>
+  <button onclick="showSection('reports')">📄 Reports</button>
+  <button onclick="logout()" class="logout">🚪 Logout</button>
 </div>
 
-<div id="weredaDash" class="hidden">
-<div class="card">
-<h3>📋 ሪፖርት ፎርም</h3>
-<input id="region" placeholder="ክልል" />
-<input id="zone" placeholder="ዞን" />
-<input id="wereda" placeholder="ወረዳ" />
-<input id="station" placeholder="ጣቢያ" />
-<input id="crime" placeholder="ወንጀል" />
-<textarea id="desc" placeholder="መግለጫ"></textarea>
-<button id="sendBtn">📤 ላክ</button>
+<div class="main">
+
+<div id="dashboard">
+  <div class="cards">
+    <div class="card"><h2>📄 ጠቅላላ</h2><p id="totalReports">0</p></div>
+    <div class="card"><h2>🚨 ከባድ</h2><p id="serious">0</p></div>
+    <div class="card"><h2>🟡 ቀላል</h2><p id="light">0</p></div>
+    <div class="card"><h2>📍 Zones</h2><p id="zones">0</p></div>
+  </div>
+</div>
+
+<div id="reports" style="display:none">
+  <h2>📄 የተላኩ ሪፖርቶች</h2>
+  <div id="reportList"></div>
+</div>
+
 </div>
 </div>
 
-<button id="logoutBtn" style="position:fixed;top:10px;right:10px;background:red;">Logout</button>
+<script>
 
-</div>
+function showSection(sec){
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('reports').style.display='none';
+  document.getElementById(sec).style.display='block';
+}
 
-<script type="module">
+function logout(){
+  localStorage.removeItem('user');
+  location.href='index.html'; // redirect to login page
+}
 
-import { db, auth } from "./firebase.js";
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// safer data structure (avoid undefined)
+let reports = JSON.parse(localStorage.getItem('reports') || '[]');
 
-// ✅ FIX (IMPORTANT)
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
+function loadReports(){
+  const list=document.getElementById('reportList');
+  list.innerHTML='';
 
-const loginBtn=document.getElementById("loginBtn");
-const loginBox=document.getElementById("loginBox");
-const weredaDash=document.getElementById("weredaDash");
-const sendBtn=document.getElementById("sendBtn");
-const logoutBtn=document.getElementById("logoutBtn");
+  if(!reports.length){
+    list.innerHTML="<p>ምንም ሪፖርት የለም</p>";
+    return;
+  }
 
-let currentUser=null;
+  // newest first
+  reports.sort((a,b)=> new Date(b.date) - new Date(a.date));
 
-// LOGIN
-loginBtn.onclick=async()=>{
- const email=emailInput.value;
- const password=passwordInput.value;
- try{
-  await signInWithEmailAndPassword(auth,email,password);
- }catch(e){
-  alert(e.message);
- }
-};
+  reports.forEach((r)=>{
+    list.innerHTML += `
+    <div class='report-item'>
+      📄 ${r.crime || '---'} (${r.zone || '---'})<br>
+      🕒 ${r.date ? new Date(r.date).toLocaleString() : ''}
+      ${r.new ? "<span class='new'> NEW</span>" : ""}
+    </div>`;
+  });
 
-// AUTH
-onAuthStateChanged(auth,(user)=>{
- if(user){
-  currentUser=user;
-  loginBox.style.display="none";
-  weredaDash.classList.remove("hidden");
- }else{
-  loginBox.style.display="block";
- }
-});
+  document.getElementById('totalReports').innerText=reports.length;
+  document.getElementById('serious').innerText=reports.filter(r=>r.level==='heavy').length;
+  document.getElementById('light').innerText=reports.filter(r=>r.level==='light').length;
+  document.getElementById('zones').innerText=[...new Set(reports.map(r=>r.zone))].length;
+}
 
-// LOGOUT
-logoutBtn.onclick=async()=>{
- await signOut(auth);
- location.reload();
-};
-
-// SEND REPORT
-sendBtn.onclick=async()=>{
- const data={
-  region:region.value,
-  zone:zone.value,
-  wereda:wereda.value,
-  station:station.value,
-  crime:crime.value,
-  desc:desc.value,
-  reporterEmail:currentUser.email,
-  createdAt:new Date().toISOString()
- };
-
- await addDoc(collection(db,"reports"),data);
- alert("✅ ተልኳል");
-};
+loadReports();
 
 </script>
+
 </body>
 </html>
