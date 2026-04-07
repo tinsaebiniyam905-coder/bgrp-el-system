@@ -1,110 +1,286 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Police Dashboard</title>
+<meta charset="UTF-8" />
+<title>የፖሊስ ሪፖርት ሲስተም</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body{margin:0;font-family:'Segoe UI',sans-serif;background:#f4f6f9}
-.header{background:linear-gradient(90deg,#0f2027,#203a43,#2c5364);color:white;padding:20px;text-align:center}
-.header h1{margin:0;font-size:26px}
-.header p{color:gold;font-weight:bold}
-.container{display:flex}
-.sidebar{width:220px;background:#1e2a38;color:white;height:100vh;padding:20px}
-.sidebar button{width:100%;padding:10px;margin:10px 0;border:none;background:#34495e;color:white;cursor:pointer;border-radius:5px}
-.sidebar button:hover{background:#16a085}
-.main{flex:1;padding:20px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
-.card{background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.report-item{background:white;padding:15px;margin:10px 0;border-radius:8px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.report-item:hover{background:#ecf0f1}
-.new{color:red;font-weight:bold}
-.logout{background:red !important}
+body{margin:0;font-family:'Segoe UI';background:linear-gradient(135deg,#1f4037,#99f2c8);} 
+.container{max-width:1100px;margin:auto;padding:20px;} 
+.card{background:white;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 10px 25px rgba(0,0,0,0.2);} 
+input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;} 
+button{background:#28a745;color:white;padding:10px;border:none;border-radius:8px;cursor:pointer;} 
+.hidden{display:none;} 
+.report-item{background:#f1f1f1;margin:10px 0;padding:10px;border-radius:10px;cursor:pointer;} 
+.new{background:#ffcccc;border-left:5px solid red;}
+.read{background:#e7f5ff;}
 </style>
 </head>
 
 <body>
-
-<div class="header">
-  <h1>🇪🇹 የፖሊስ ሪፖርት ስርዓት</h1>
-  <p>ቤንሻንጉል ጉምዝ ክልል ፖሊስ ኮሚሽን እና ሰላም ግንባታና ፀጥታ ቢሮ</p>
-</div>
-
 <div class="container">
+<div style="text-align:center; margin-bottom:15px;">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/Flag_of_Ethiopia.svg" alt="ETH Flag" style="width:90px; display:block; margin:0 auto 10px auto; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
+  
+  <h2 style="
+    margin:0;
+    font-size:28px;
+    font-weight:bold;
+    background: linear-gradient(90deg, #078930, #FCDD09, #DA121A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  ">
+    🇪🇹 የ7ኛዉ ሀገራዊ ምርጫ የቤጉ ክልል የፀጥታ ሪፖርት ሲስተም
+  </h2>
 
-<div class="sidebar">
-  <h3>📋 Menu</h3>
-  <button onclick="showSection('dashboard')">📊 Dashboard</button>
-  <button onclick="showSection('reports')">📄 Reports</button>
-  <button onclick="logout()" class="logout">🚪 Logout</button>
+  <h4 style="
+    color:gold;
+    font-weight:bold;
+    margin-top:8px;
+    font-size:16px;
+  ">
+    በቤንሻንጉል ጉምዝ ክልል ፖሊስ ኮሚሽን እና በቤንሻንጉል ጉምዝ ክልል ሰላም ግንባታና ፀጥታ ቢሮ የተዘጋጀ
+  </h4>
 </div>
 
-<div class="main">
-
-<div id="dashboard">
-  <div class="cards">
-    <div class="card"><h2>📄 ጠቅላላ</h2><p id="totalReports">0</p></div>
-    <div class="card"><h2>🚨 ከባድ</h2><p id="serious">0</p></div>
-    <div class="card"><h2>🟡 ቀላል</h2><p id="light">0</p></div>
-    <div class="card"><h2>📍 Zones</h2><p id="zones">0</p></div>
-  </div>
+<div class="card" id="loginBox">
+<input id="email" placeholder="email" />
+<input id="password" type="password" placeholder="password" />
+<button id="loginBtn">Login</button>
 </div>
 
-<div id="reports" style="display:none">
-  <h2>📄 የተላኩ ሪፖርቶች</h2>
-  <div id="reportList"></div>
+<!-- WEREDA -->
+<div id="weredaDash" class="hidden">
+<div class="card">
+<h3>📋 ሪፖርት ፎርም</h3>
+<input id="region" placeholder="ክልል" />
+<input id="zone" placeholder="ዞን" />
+<input id="wereda" placeholder="ወረዳ" />
+<input id="station" placeholder="ጣቢያ" />
+<input id="crime" placeholder="ወንጀል" />
+<textarea id="desc" placeholder="መግለጫ"></textarea>
+<button id="sendBtn">📤 ላክ</button>
 </div>
 
+<div class="card">
+<h3>📂 የላኩት ሪፖርቶች (የእርስዎ)</h3>
+<div id="myReports"></div>
 </div>
 </div>
 
-<script>
+<!-- POLICE -->
+<div id="policeDash" class="hidden">
+<div class="card">
+<h3>🔔 <span id="notify">0</span></h3>
+<div id="reports"></div>
+<canvas id="chart"></canvas>
+<div id="ai"></div>
+</div>
+</div>
 
-function showSection(sec){
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('reports').style.display='none';
-  document.getElementById(sec).style.display='block';
-}
+<button id="logoutBtn" style="position:fixed;top:10px;right:10px;background:red;">Logout</button>
+</div>
 
-function logout(){
-  localStorage.removeItem('user');
-  location.href='index.html'; // redirect to login page
-}
+<script type="module">
+import { db, auth, collection, addDoc, onSnapshot } from "./firebase.js";
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// safer data structure (avoid undefined)
-let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+const loginBtn=document.getElementById("loginBtn");
+const loginBox=document.getElementById("loginBox");
+const weredaDash=document.getElementById("weredaDash");
+const policeDash=document.getElementById("policeDash");
+const reportsDiv=document.getElementById("reports");
+const notify=document.getElementById("notify");
+const aiDiv=document.getElementById("ai");
+const sendBtn=document.getElementById("sendBtn");
+const logoutBtn=document.getElementById("logoutBtn");
+const myReports=document.getElementById("myReports");
 
-function loadReports(){
-  const list=document.getElementById('reportList');
-  list.innerHTML='';
+let allReports=[];
+let currentUser=null;
+let readIds=new Set(JSON.parse(localStorage.getItem("readIds")||"[]"));
 
-  if(!reports.length){
-    list.innerHTML="<p>ምንም ሪፖርት የለም</p>";
-    return;
+loginBtn.onclick=async()=>{
+ const email=document.getElementById("email").value;
+ const password=document.getElementById("password").value;
+ try{
+  await signInWithEmailAndPassword(auth,email,password);
+ }catch(e){
+  alert("❌ Login Failed: "+e.message);
+ }
+};
+
+onAuthStateChanged(auth,(user)=>{
+ if(user){
+  currentUser=user;
+  loginBox.style.display="none";
+
+  weredaDash.classList.add("hidden");
+  policeDash.classList.add("hidden");
+
+  if(user.email && user.email.includes("wereda")){
+    weredaDash.classList.remove("hidden");
+    loadMyReports();
+  }else{
+    policeDash.classList.remove("hidden");
+    realtime();
   }
+ }else{
+  loginBox.style.display="block";
+  weredaDash.classList.add("hidden");
+  policeDash.classList.add("hidden");
+ }
+});
 
-  // newest first
-  reports.sort((a,b)=> new Date(b.date) - new Date(a.date));
+logoutBtn.onclick=async()=>{
+ await signOut(auth);
+ location.reload();
+};
 
-  reports.forEach((r)=>{
-    list.innerHTML += `
-    <div class='report-item'>
-      📄 ${r.crime || '---'} (${r.zone || '---'})<br>
-      🕒 ${r.date ? new Date(r.date).toLocaleString() : ''}
-      ${r.new ? "<span class='new'> NEW</span>" : ""}
-    </div>`;
+// SEND (store user email)
+sendBtn.onclick=async()=>{
+ const data={
+  region:region.value,
+  zone:zone.value,
+  wereda:wereda.value,
+  station:station.value,
+  crime:crime.value,
+  desc:desc.value,
+  reporterEmail:currentUser.email,
+  createdAt:new Date().toISOString()
+ };
+ await addDoc(collection(db,"reports"),data);
+ alert("✅ ተልኳል");
+};
+
+// WEREDA → ONLY OWN FILES
+function loadMyReports(){
+ onSnapshot(collection(db,"reports"),(snap)=>{
+  let list=[];
+  allReports=[];
+
+  snap.forEach(doc=>{
+    const d={id:doc.id,...doc.data()};
+
+    // STRICT SECURITY: only own reports
+    if(d.reporterEmail===currentUser.email){
+      list.push(d);
+      allReports.push(d); // only own data accessible
+    }
   });
 
-  document.getElementById('totalReports').innerText=reports.length;
-  document.getElementById('serious').innerText=reports.filter(r=>r.level==='heavy').length;
-  document.getElementById('light').innerText=reports.filter(r=>r.level==='light').length;
-  document.getElementById('zones').innerText=[...new Set(reports.map(r=>r.zone))].length;
+  list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  myReports.innerHTML="";
+  list.forEach(r=>{
+    myReports.innerHTML+=`<div class='report-item' onclick='viewReport("${r.id}")'>
+      📄 ${r.crime}<br>
+      🕒 ${new Date(r.createdAt).toLocaleString()}
+    </div>`;
+  });
+ });
+};
+// POLICE REALTIME (all reports)
+function realtime(){
+ onSnapshot(collection(db,"reports"),(snap)=>{
+  allReports=[];
+  snap.forEach(doc=>allReports.push({id:doc.id,...doc.data()}));
+
+  allReports.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  notify.innerText=snap.size;
+  render();
+ });
 }
 
-loadReports();
+// GROUP + NEW/READ
+function render(){
+ reportsDiv.innerHTML="";
+ let grouped={};
+
+ allReports.forEach(r=>{
+  if(!grouped[r.zone]) grouped[r.zone]={};
+  if(!grouped[r.zone][r.wereda]) grouped[r.zone][r.wereda]=[];
+  grouped[r.zone][r.wereda].push(r);
+ });
+
+ for(let zone in grouped){
+  reportsDiv.innerHTML+=`<h3>📁 ${zone}</h3>`;
+  for(let w in grouped[zone]){
+    reportsDiv.innerHTML+=`<h4>📂 ${w}</h4>`;
+
+    grouped[zone][w].forEach(r=>{
+      let isNew=!readIds.has(r.id);
+
+      reportsDiv.innerHTML+=`
+      <div class='report-item ${isNew?"new":"read"}' onclick='viewReport("${r.id}")'>
+        ${r.crime}<br>
+        🕒 ${new Date(r.createdAt).toLocaleString()}
+        ${isNew?"<b style='color:red'> NEW</b>":"✔ ታይቷል"}
+      </div>`;
+    });
+  }
+ }
+ analyze();
+}
+
+// VIEW → MARK AS READ
+window.viewReport=function(id){
+ let r = allReports.find(x=>x.id===id);
+
+ // ከwereda side ከሆነ በmyReports ውስጥ ፈልግ
+ if(!r){
+   const items = document.querySelectorAll('#myReports .report-item');
+ }
+
+ // fallback (important fix)
+ if(!r){
+   alert("❌ ሪፖርት አልተገኘም (undefined fix)");
+   return;
+ }
+
+ // mark as read
+ readIds.add(id);
+ localStorage.setItem("readIds",JSON.stringify([...readIds]));
+
+ const w = window.open();
+ w.document.write(`
+ <html>
+ <head>
+ <title>Report</title>
+ <style>
+ body{font-family:Arial;padding:20px;}
+ h2{color:#2c3e50;}
+ p{margin:5px 0;font-size:16px;}
+ </style>
+ </head>
+ <body>
+ <h2>📄 የፖሊስ ሪፖርት</h2>
+ <p><b>ክልል:</b> ${r.region || ''}</p>
+ <p><b>ዞን:</b> ${r.zone || ''}</p>
+ <p><b>ወረዳ:</b> ${r.wereda || ''}</p>
+ <p><b>ጣቢያ:</b> ${r.station || ''}</p>
+ <p><b>ወንጀል:</b> ${r.crime || ''}</p>
+ <p><b>መግለጫ:</b> ${r.desc || ''}</p>
+ <p><b>ቀን:</b> ${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</p>
+ <br>
+ <button onclick="window.print()">🖨 Print</button>
+ </body>
+ </html>
+ `);
+};
+
+// AI hotspot
+function analyze(){
+ let count={};
+ allReports.forEach(r=>count[r.zone]=(count[r.zone]||0)+1);
+ aiDiv.innerHTML="🔥 hotspot: "+Object.keys(count).reduce((a,b)=>count[a]>count[b]?a:b,"");
+}
 
 </script>
-
 </body>
 </html>
