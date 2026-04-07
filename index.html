@@ -2,37 +2,47 @@
 <html lang="am">
 <head>
 <meta charset="UTF-8" />
-<title>የፖሊስ ሪፖርት ሲስተም</title>
+<title>የፖሊስ ሪፖርት ሲስተም (Demo)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
 body{margin:0;font-family:'Segoe UI';background:linear-gradient(135deg,#1f4037,#99f2c8);} 
 .container{max-width:1100px;margin:auto;padding:20px;} 
 .card{background:white;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 10px 25px rgba(0,0,0,0.2);} 
-input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;} 
+input,textarea,select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;} 
 button{background:#28a745;color:white;padding:10px;border:none;border-radius:8px;cursor:pointer;} 
 .hidden{display:none;} 
 .report-item{background:#f1f1f1;margin:10px 0;padding:10px;border-radius:10px;cursor:pointer;} 
-.new{background:#ffcccc;border-left:5px solid red;}
-.read{background:#e7f5ff;}
+.warning{background:#fff3cd;padding:10px;border-radius:8px;margin-top:10px;} 
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2 style="text-align:center;">🇪🇹 የፖሊስ ሪፖርት ሲስተም</h2>
+<h2 style="text-align:center;">🇪🇹 የፖሊስ ሪፖርት ሲስተም (Demo)</h2>
 
+<p class="warning">
+⚠️ This system is a demo project for educational purposes only.<br>
+It is NOT an official police or government system.<br>
+Do NOT enter real or sensitive personal information.
+</p>
+
+<!-- LOGIN (SAFE VERSION) -->
 <div class="card" id="loginBox">
-<input id="email" placeholder="email" />
-<input id="password" type="password" placeholder="password" />
-<button id="loginBtn">Login</button>
+<p style="color:red;">Demo access only — no real credentials required.</p>
+<select id="role">
+<option value="wereda">Wereda User</option>
+<option value="police">Police</option>
+</select>
+<button id="loginBtn">Enter</button>
 </div>
 
 <!-- WEREDA -->
 <div id="weredaDash" class="hidden">
 <div class="card">
 <h3>📋 ሪፖርት ፎርም</h3>
+<p style="color:red;">Do NOT submit real personal or sensitive data.</p>
 <input id="region" placeholder="ክልል" />
 <input id="zone" placeholder="ዞን" />
 <input id="wereda" placeholder="ወረዳ" />
@@ -51,76 +61,56 @@ button{background:#28a745;color:white;padding:10px;border:none;border-radius:8px
 <!-- POLICE -->
 <div id="policeDash" class="hidden">
 <div class="card">
-<h3>🔔 <span id="notify">0</span></h3>
+<h3>📂 ሪፖርቶች</h3>
 <div id="reports"></div>
 </div>
 </div>
 
 <button id="logoutBtn" style="position:fixed;top:10px;right:10px;background:red;">Logout</button>
 
+<p style="text-align:center;margin-top:20px;font-size:12px;">
+This is a student/demo project. No real data is collected or shared.
+</p>
+
 </div>
 
 <script type="module">
 
-// ✅ FIXED IMPORTS
-import { db, auth } from "./firebase.js";
+import { db } from "./firebase.js";
 import { 
   collection, 
   addDoc, 
   onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
 const loginBtn=document.getElementById("loginBtn");
 const loginBox=document.getElementById("loginBox");
 const weredaDash=document.getElementById("weredaDash");
 const policeDash=document.getElementById("policeDash");
 const reportsDiv=document.getElementById("reports");
-const notify=document.getElementById("notify");
 const sendBtn=document.getElementById("sendBtn");
 const logoutBtn=document.getElementById("logoutBtn");
 const myReports=document.getElementById("myReports");
 
+let role=null;
 let allReports=[];
-let currentUser=null;
 
-// LOGIN
-loginBtn.onclick=async()=>{
- const email=emailInput.value;
- const password=passwordInput.value;
- try{
-  await signInWithEmailAndPassword(auth,email,password);
- }catch(e){
-  alert(e.message);
+// LOGIN (SAFE)
+loginBtn.onclick=()=>{
+ role=document.getElementById("role").value;
+ loginBox.style.display="none";
+
+ if(role==="wereda"){
+   weredaDash.classList.remove("hidden");
+   loadMyReports();
+ }else{
+   policeDash.classList.remove("hidden");
+   realtime();
  }
 };
 
-// AUTH
-onAuthStateChanged(auth,(user)=>{
- if(user){
-  currentUser=user;
-  loginBox.style.display="none";
-
-  if(user.email.includes("wereda")){
-    weredaDash.classList.remove("hidden");
-    loadMyReports();
-  }else{
-    policeDash.classList.remove("hidden");
-    realtime();
-  }
- }else{
-  loginBox.style.display="block";
- }
-});
-
 // LOGOUT
-logoutBtn.onclick=async()=>{
- await signOut(auth);
+logoutBtn.onclick=()=>{
  location.reload();
 };
 
@@ -133,26 +123,20 @@ sendBtn.onclick=async()=>{
   station:station.value,
   crime:crime.value,
   desc:desc.value,
-  reporterEmail:currentUser.email,
   createdAt:new Date().toISOString()
  };
 
  await addDoc(collection(db,"reports"),data);
- alert("✅ ተልኳል");
+ alert("✅ ተልኳል (Demo)");
 };
 
-// WEREDA ONLY OWN REPORTS
+// WEREDA REPORTS
 function loadMyReports(){
  onSnapshot(collection(db,"reports"),(snap)=>{
   myReports.innerHTML="";
   snap.forEach(doc=>{
     const r=doc.data();
-    if(r.reporterEmail===currentUser.email){
-      myReports.innerHTML+=`
-      <div class="report-item" onclick="viewReport('${doc.id}')">
-      📄 ${r.crime}
-      </div>`;
-    }
+    myReports.innerHTML+=`<div class="report-item">📄 ${r.crime}</div>`;
   });
  });
 }
@@ -160,43 +144,13 @@ function loadMyReports(){
 // POLICE REALTIME
 function realtime(){
  onSnapshot(collection(db,"reports"),(snap)=>{
-  allReports=[];
   reportsDiv.innerHTML="";
-
   snap.forEach(doc=>{
-    const r={id:doc.id,...doc.data()};
-    allReports.push(r);
-
-    reportsDiv.innerHTML+=`
-    <div class="report-item" onclick="viewReport('${r.id}')">
-    📄 ${r.crime} - ${r.zone}
-    </div>`;
+    const r=doc.data();
+    reportsDiv.innerHTML+=`<div class="report-item">📄 ${r.crime} - ${r.zone}</div>`;
   });
-
-  notify.innerText=allReports.length;
  });
 }
-
-// VIEW REPORT
-window.viewReport=function(id){
- const r=allReports.find(x=>x.id===id);
-
- if(!r){
-  alert("❌ not found");
-  return;
- }
-
- const w=window.open();
- w.document.write(`
- <h2>📄 ሪፖርት</h2>
- <p>ክልል: ${r.region||""}</p>
- <p>ዞን: ${r.zone||""}</p>
- <p>ወረዳ: ${r.wereda||""}</p>
- <p>ወንጀል: ${r.crime||""}</p>
- <p>መግለጫ: ${r.desc||""}</p>
- <button onclick="print()">Print</button>
- `);
-};
 
 </script>
 </body>
